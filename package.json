@@ -1,6 +1,6 @@
 {
   "name": "logerian",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "dist/index.js",
   "esnext": "src/index.ts",
   "author": "SwanX1 <karliscern@gmail.com>",

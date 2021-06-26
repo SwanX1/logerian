@@ -33,30 +33,35 @@ export function getLoggerLevelName(level: LoggerLevel): 'DEBUG' | 'INFO' | 'WARN
   return 'INFO';
 }
 
+const coloredLogCache: Record<LoggerLevel, (date: Date) => string> = {};
 export function coloredLog(level: LoggerLevel): string {
   const date: Date = new Date();
-  const time = `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`;
-  let loglevelcolor: string;
-  switch (level) {
-    case LoggerLevel.DEBUG:
-      loglevelcolor = 'blue';
-      break;
-    case LoggerLevel.INFO:
-      loglevelcolor = 'green';
-      break;
-    case LoggerLevel.WARN:
-      loglevelcolor = 'yellow';
-      break;
-    case LoggerLevel.ERROR:
-      loglevelcolor = 'red';
-      break;
-    case LoggerLevel.FATAL:
-      loglevelcolor = 'red';
-      break;
+  if (!coloredLogCache[level]) {
+    let loglevelcolor: string;
+    switch (level) {
+      case LoggerLevel.DEBUG:
+        loglevelcolor = 'blue';
+        break;
+      case LoggerLevel.INFO:
+        loglevelcolor = 'green';
+        break;
+      case LoggerLevel.WARN:
+        loglevelcolor = 'yellow';
+        break;
+      case LoggerLevel.ERROR:
+        loglevelcolor = 'red';
+        break;
+      case LoggerLevel.FATAL:
+        loglevelcolor = 'red';
+        break;
+    }
+    let loggerLevelPrefix: string = getLoggerLevelName(level);
+    loggerLevelPrefix = `[${loggerLevelPrefix}]`.padEnd(7, ' ');
+    const s = chalk`{gray [DATE]} {${loglevelcolor} ${loggerLevelPrefix}} `;
+    coloredLogCache[level] = (date) => s.replace('DATE', `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}`)
   }
-  let loggerLevelPrefix: string = getLoggerLevelName(level);
-  loggerLevelPrefix = `[${loggerLevelPrefix}]`.padEnd(7, ' ');
-  return chalk`{gray [${time}]} {${loglevelcolor} ${loggerLevelPrefix}} `;
+
+  return coloredLogCache[level](date);
 }
 
 export class Logger {
