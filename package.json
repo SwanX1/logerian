@@ -1,6 +1,6 @@
 {
   "name": "logerian",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "dist/index.js",
   "esnext": "src/index.ts",
   "author": "SwanX1 <karliscern@gmail.com>",
@@ -17,9 +17,6 @@
     "lint:fix": "eslint src --fix",
     "test": "jest --verbose",
     "runAll": "yarn build && (yarn lint & yarn test)"
-  },
-  "dependencies": {
-    "chalk": "^4.1.1"
   },
   "devDependencies": {
     "@tsconfig/node14": "^1.0.1",

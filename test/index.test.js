@@ -1,7 +1,6 @@
 /// <reference types="jest" />
 const { Logger, coloredLog, getLoggerLevelName, LoggerLevel } = require('../dist/index');
 const { WriteStream } = require('fs');
-const chalk = require('chalk');
 
 test('logger level is in correct order', () => {
   expect(LoggerLevel.DEBUG).toBeLessThan(LoggerLevel.INFO);
@@ -71,6 +70,6 @@ test('strips formatting for fs.WriteStream', () => {
 
   logger.info('test');
   expect(writtenString).toBe('test\n');
-  logger.info(chalk`{yellow Hello} World!`);
+  logger.info(`\x1b[33mHello\x1b[39m World!`);
   expect(writtenString).toBe('Hello World!\n');
 });
