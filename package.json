@@ -1,7 +1,7 @@
 {
   "name": "logerian",
   "description": "Logerian is a quick and dirty logging utility.",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "esnext": "src/index.ts",
