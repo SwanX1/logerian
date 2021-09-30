@@ -1,6 +1,8 @@
-/// <reference types="jest" />
-const { Logger, coloredLog, getLoggerLevelName, LoggerLevel } = require('../dist/index');
-const { WriteStream } = require('fs');
+import { Logger, coloredLog, getLoggerLevelName, LoggerLevel } from '../src/index';
+import { WriteStream } from 'fs';
+
+
+const levels: readonly (keyof typeof LoggerLevel)[] = Object.freeze(['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']);
 
 test('logger level is in correct order', () => {
   expect(LoggerLevel.DEBUG).toBeLessThan(LoggerLevel.INFO);
@@ -10,7 +12,7 @@ test('logger level is in correct order', () => {
 });
 
 test('coloredLog outputs correct string', () => {
-  const regex = (color, level) => new RegExp(`^\x1B\\[90m\\[\\d{2}:\\d{2}:\\d{2}\\]\x1B\\[39m \x1B\\${color}${('\\[' + level + '\\]').padEnd(9, ' ')}\x1B\\[39m $`);
+  const regex = (color: string, level: string) => new RegExp(`^\x1B\\[90m\\[\\d{2}:\\d{2}:\\d{2}\\]\x1B\\[39m \x1B\\${color}${('\\[' + level + '\\]').padEnd(9, ' ')}\x1B\\[39m $`);
 
   expect(coloredLog(LoggerLevel.DEBUG)).toMatch(regex('[34m', 'DEBUG'));
   expect(coloredLog(LoggerLevel.INFO)).toMatch(regex('[32m', 'INFO'));
@@ -20,14 +22,12 @@ test('coloredLog outputs correct string', () => {
 });
 
 test('getLoggerLevelName returns correct string', () => {
-  const levels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
   for (const level of levels) {
     expect(getLoggerLevelName(LoggerLevel[level])).toBe(level);
   }
 });
 
 test('respects loggerlevels', () => {
-  const levels = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'];
 
   for (const level of levels) {
     let wrote = false;
@@ -42,7 +42,8 @@ test('respects loggerlevels', () => {
     });
 
     for (const comparelevel of levels) {
-      logger[comparelevel.toLowerCase()]();
+      //@ts-ignore hacky stuff
+      (logger[comparelevel.toLowerCase()] as ((...data: any[]) => void))();
       expect(wrote).toBe(LoggerLevel[level] <= LoggerLevel[comparelevel]);
       wrote = false;
     }
@@ -51,7 +52,8 @@ test('respects loggerlevels', () => {
 
 test('strips formatting for fs.WriteStream', () => {
   class MockWriteStream extends WriteStream {
-    constructor(writeFunc) {
+    constructor(writeFunc: (...data: any[]) => any) {
+      //@ts-ignore typescript is dumb and doesn't know better
       super('');
       this.write = writeFunc;
     }
@@ -63,7 +65,7 @@ test('strips formatting for fs.WriteStream', () => {
   const logger = new Logger({
     streams: [
       {
-        stream: new MockWriteStream(s => writtenString = s)
+        stream: new MockWriteStream((s: string) => writtenString = s)
       }
     ]
   });

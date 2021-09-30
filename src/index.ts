@@ -84,13 +84,6 @@ export class Logger {
   }
 
   /* eslint-disable @typescript-eslint/no-explicit-any */
-  // HACKY STUFF, DO NOT TOUCH
-  private static getFormattedForStdout(callback: (formatted: string) => unknown, ...data: any[]): void {
-    new console.Console({
-      write: callback,
-    } as NodeJS.WritableStream).log(...data);
-  }
-
   public log(...data: any[]): void {
     this.internalLog(LoggerLevel.INFO, ...data);
   }

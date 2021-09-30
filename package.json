@@ -1,14 +1,31 @@
 {
   "name": "logerian",
-  "version": "1.0.3",
+  "description": "Logerian is a quick and dirty logging utility.",
+  "version": "1.0.5",
   "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
   "esnext": "src/index.ts",
-  "author": "SwanX1 <karliscern@gmail.com>",
+  "author": {
+    "name": "Kārlis Čerņavskis",
+    "email": "karliscern@gmail.com",
+    "url": "https://cernavskis.dev/"
+  },
+  "private": false,
   "license": "CC0-1.0",
   "repository": {
     "type": "git",
-    "url": "https://github.com/SwanX1/Logerian.git"
+    "url": "git://github.com/SwanX1/logerian.git"
   },
+  "bugs": "https://github.com/SwanX1/logerian/issues",
+  "keywords": [
+    "log",
+    "logger",
+    "logging",
+    "colored",
+    "color",
+    "coloured",
+    "colour"
+  ],
   "scripts": {
     "start": "node .",
     "build": "tsc",
@@ -16,15 +33,20 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "test": "jest --verbose",
-    "runAll": "yarn build && (yarn lint & yarn test)"
+    "docs": "typedoc --excludePrivate --name \"Logerian Documentation\" --logLevel Verbose src/index.ts"
   },
   "devDependencies": {
-    "@tsconfig/node14": "^1.0.1",
+    "@types/jest": "^27.0.2",
     "@types/node": "^15.12.2",
     "@typescript-eslint/eslint-plugin": "^4.26.1",
     "@typescript-eslint/parser": "^4.26.1",
     "eslint": "^7.28.0",
     "jest": "^27.0.4",
-    "typescript": "^4.3.2"
+    "ts-jest": "^27.0.5",
+    "typedoc": "^0.22.4",
+    "typescript": "next"
+  },
+  "engines": {
+    "node": "^16"
   }
 }
