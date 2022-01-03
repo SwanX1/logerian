@@ -75,3 +75,89 @@ test('strips formatting for fs.WriteStream', () => {
   logger.info(`\x1b[33mHello\x1b[39m World!`);
   expect(writtenString).toBe('Hello World!\n');
 });
+
+test('respects logger hierarchy', () => {
+  let firstWritten = '';
+  let secondWritten = '';
+  let thirdWritten = '';
+
+  const firstLogger = new Logger({
+    identifier: 'FirstLogger',
+    streams: [
+      {
+        level: LoggerLevel.WARN,
+        stream: {
+          write: (s: string) => void (firstWritten = s) || true
+        }
+      },
+    ],
+  });
+
+  const secondLogger = new Logger({
+    identifier: 'SecondLogger',
+    identifierPrefix: (_level: LoggerLevel, identifier?: string | symbol) => `[${identifier?.toString()}]`,
+    streams: [
+      {
+        level: LoggerLevel.INFO,
+        stream: firstLogger
+      },
+      {
+        level: LoggerLevel.INFO,
+        stream: {
+          write: (s: string) => void (secondWritten = s) || true
+        }
+      },
+    ],
+  });
+  
+  const thirdLogger = new Logger({
+    identifier: 'ThirdLogger',
+    identifierPrefix: (_level: LoggerLevel, identifier?: string | symbol) => `[${identifier?.toString()}]`,
+    streams: [
+      {
+        level: LoggerLevel.DEBUG,
+        stream: secondLogger
+      },
+      {
+        level: LoggerLevel.DEBUG,
+        stream: {
+          write: (s: string) => void (thirdWritten = s) || true
+        }
+      }
+    ],
+  });
+  
+
+  thirdLogger.info('foobar');
+  expect(firstWritten).toBe('');
+  expect(secondWritten).toBe('[ThirdLogger] foobar\n');
+  expect(thirdWritten).toBe('foobar\n');
+  firstWritten = '';
+  secondWritten = '';
+  thirdWritten = '';
+
+  thirdLogger.warn('foobar');
+  expect(firstWritten).toBe('[SecondLogger] [ThirdLogger] foobar\n');
+  expect(secondWritten).toBe('[ThirdLogger] foobar\n');
+  expect(thirdWritten).toBe('foobar\n');
+  firstWritten = '';
+  secondWritten = '';
+  thirdWritten = '';
+
+  secondLogger.error('foobar');
+  expect(firstWritten).toBe('[SecondLogger] foobar\n');
+  expect(secondWritten).toBe('foobar\n');
+  expect(thirdWritten).toBe('');
+  firstWritten = '';
+  secondWritten = '';
+  thirdWritten = '';
+  
+  firstLogger.fatal('foobar');
+  expect(firstWritten).toBe('foobar\n');
+  expect(secondWritten).toBe('');
+  expect(thirdWritten).toBe('');
+  firstWritten = '';
+  secondWritten = '';
+  thirdWritten = '';
+
+});

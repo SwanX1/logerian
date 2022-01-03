@@ -1,17 +1,19 @@
 import fs from 'fs';
 import { formatWithOptions } from 'util';
 
-export type PrefixPredicate = (level: LoggerLevel) => string;
+export type PrefixPredicate = (level: LoggerLevel, identifier?: string | symbol) => string;
 export type FilterPredicate = (data: string | Uint8Array, ansiFreeData: string | Uint8Array) => boolean;
 
 export interface LoggerOutput {
-  stream: { write: NodeJS.WritableStream['write'] };
+  stream: { write: NodeJS.WritableStream['write'] } | Logger;
   level?: LoggerLevel;
   prefix?: PrefixPredicate;
   filter?: FilterPredicate;
 }
 
 export interface LoggerOptions {
+  identifier: string | symbol;
+  identifierPrefix?: PrefixPredicate;
   streams: LoggerOutput[];
 }
 
@@ -30,6 +32,16 @@ export function getLoggerLevelName(level: LoggerLevel): 'DEBUG' | 'INFO' | 'WARN
   if (level == LoggerLevel.ERROR) return 'ERROR';
   if (level == LoggerLevel.FATAL || level > 4) return 'FATAL';
   return 'INFO';
+}
+
+export function coloredIdentifier(identifierColor = 0, bracketColor = 0): PrefixPredicate {
+  return (_level: LoggerLevel, identifier?: string | symbol): string => {
+    if (identifier == null) return '';
+    if (typeof identifier === 'symbol') {
+      identifier = identifier.toString();
+    }
+    return `\x1b[${bracketColor}m[\x1b[0m\x1b[${identifierColor}m${identifier}\x1b[${bracketColor}m]\x1b[0m`;
+  }
 }
 
 export function coloredLog(level: LoggerLevel): string {
@@ -58,6 +70,7 @@ export function coloredLog(level: LoggerLevel): string {
 
 export class Logger {
   static defaultOptions: LoggerOptions = {
+    identifier: Symbol('Unnamed'),
     streams: [
       {
         stream: process.stdout,
@@ -70,12 +83,19 @@ export class Logger {
   private options: LoggerOptions;
   private outputs: LoggerOutput[];
 
-  constructor(options?: LoggerOptions) {
-    this.options = options ?? Logger.defaultOptions;
+  constructor(options?: Partial<LoggerOptions>) {
+    this.options = {
+      ...Logger.defaultOptions,
+      ...options,
+    };
     this.outputs = [];
     for (const output of this.options.streams) {
       this.addOutput(output);
     }
+  }
+
+  public get identifier(): string | symbol {
+    return this.options.identifier;
   }
 
   public addOutput(output: LoggerOutput): this {
@@ -110,28 +130,36 @@ export class Logger {
   /* eslint-enable @typescript-eslint/no-explicit-any */
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  private internalLog(level: LoggerLevel, ...data: any[]): void {
+  protected internalLog(level: LoggerLevel, ...data: any[]): void {
     for (const output of this.outputs) {
       if ((output.level ?? LoggerLevel.INFO) <= level) {
-        let s = '';
-        if (typeof output.prefix === 'function') {
-          s += output.prefix(level);
-        }
-
-        s += formatWithOptions.apply(this, [{ colors: true }, ...data]);
-        // Remove ansi codes
-        let sStripped = s.replace(
-          // eslint-disable-next-line no-control-regex
-          /[\u001B\u009B][[\]()#;?]*(?:(?:(?:[a-zA-Z\d]*(?:;[-a-zA-Z\d/#&.:=?%@~_]*)*)?\u0007)|(?:(?:\d{1,4}(?:;\d{0,4})*)?[\dA-PR-TZcf-ntqry=><~]))/g,
-          ''
-          );
-        if (typeof output.filter === 'function' && !output.filter(s, sStripped)) continue;
-        s += '\n';
-        sStripped += '\n';
-        if (output.stream instanceof fs.WriteStream) {
-          output.stream.write(sStripped);
+        if (output.stream instanceof Logger) {
+          if (this.options.identifierPrefix) {
+            output.stream.internalLog(level, this.options.identifierPrefix(level, this.options.identifier), ...data);
+          } else {
+            output.stream.internalLog(level, ...data);
+          }
         } else {
-          output.stream.write(s);
+          let s = '';
+          if (typeof output.prefix === 'function') {
+            s += output.prefix(level);
+          }
+  
+          s += formatWithOptions.apply(this, [{ colors: true }, ...data]);
+          // Remove ansi codes
+          let sStripped = s.replace(
+            // eslint-disable-next-line no-control-regex
+            /[\u001B\u009B][[\]()#;?]*(?:(?:(?:[a-zA-Z\d]*(?:;[-a-zA-Z\d/#&.:=?%@~_]*)*)?\u0007)|(?:(?:\d{1,4}(?:;\d{0,4})*)?[\dA-PR-TZcf-ntqry=><~]))/g,
+            ''
+            );
+          if (typeof output.filter === 'function' && !output.filter(s, sStripped)) continue;
+          s += '\n';
+          sStripped += '\n';
+          if (output.stream instanceof fs.WriteStream) {
+            output.stream.write(sStripped);
+          } else {
+            output.stream.write(s);
+          }
         }
       }
     }
