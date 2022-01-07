@@ -186,16 +186,10 @@ jobs:
           cd "$moddir"
           git init
           git remote add origin "https://$GITHUB_ACTOR:${{ secrets.GITHUB_TOKEN }}@github.com/$GITHUB_REPOSITORY.git"
-          echo "This is an automated branch/directory. Please do not commit to or change any files in it." >> README
+          echo "This is an automated branch. Please do not commit to or change any files in it." >> README
           git add . -v
-          commit=`
-            curl \
-              -s \
-              -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/$GITHUB_REPOSITORY/commits/$GITHUB_SHA"
-          `
-          echo "$commit" | jq ".commit.author.name" | xargs git config user.name
-          echo "$commit" | jq ".commit.author.email" | xargs git config user.email
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git branch -m docs
           git commit --verbose -m "
           $GITHUB_SHA
