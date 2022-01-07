@@ -81,4 +81,4 @@ logger.error("Uh oh! There's an error!");
 logger.debug("By the way, there's an error because your code sucks!");
 ```
 
-For further information, read the JSDocs.
+For further information, read the [JSDocs](https://cernavskis.dev/docs/logerian).
