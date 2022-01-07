@@ -5,7 +5,7 @@ export type PrefixPredicate = (level: LoggerLevel, identifier?: string | symbol)
 export type FilterPredicate = (data: string | Uint8Array, ansiFreeData: string | Uint8Array) => boolean;
 
 export interface LoggerOutput {
-  stream: { write: NodeJS.WritableStream['write'] } | Logger;
+  stream: Pick<NodeJS.WritableStream, 'write'> | Logger;
   level?: LoggerLevel;
   prefix?: PrefixPredicate;
   filter?: FilterPredicate;
