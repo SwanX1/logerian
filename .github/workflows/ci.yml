@@ -134,7 +134,7 @@ jobs:
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "*.tgz,LICENSE"
+          artifacts: "*.tgz,LICENSE,README.md"
           token: ${{ secrets.GITHUB_TOKEN }}
 
   generate-docs:
