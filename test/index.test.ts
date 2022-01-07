@@ -1,6 +1,5 @@
-import { Logger, coloredLog, getLoggerLevelName, LoggerLevel } from '../src/index';
 import { WriteStream } from 'fs';
-
+import { coloredLog, getLoggerLevelName, Logger, LoggerLevel } from '../src/index';
 
 const levels: readonly (keyof typeof LoggerLevel)[] = Object.freeze(['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']);
 
@@ -12,7 +11,13 @@ test('logger level is in correct order', () => {
 });
 
 test('coloredLog outputs correct string', () => {
-  const regex = (color: string, level: string) => new RegExp(`^\x1B\\[90m\\[\\d{2}:\\d{2}:\\d{2}\\]\x1B\\[39m \x1B\\${color}${('\\[' + level + '\\]').padEnd(9, ' ')}\x1B\\[39m $`);
+  const regex = (color: string, level: string) =>
+    new RegExp(
+      `^\x1B\\[90m\\[\\d{2}:\\d{2}:\\d{2}\\]\x1B\\[39m \x1B\\${color}${('\\[' + level + '\\]').padEnd(
+        9,
+        ' '
+      )}\x1B\\[39m $`
+    );
 
   expect(coloredLog(LoggerLevel.DEBUG)).toMatch(regex('[34m', 'DEBUG'));
   expect(coloredLog(LoggerLevel.INFO)).toMatch(regex('[32m', 'INFO'));
@@ -28,22 +33,21 @@ test('getLoggerLevelName returns correct string', () => {
 });
 
 test('respects loggerlevels', () => {
-
   for (const level of levels) {
     let wrote = false;
-    const write = () => wrote = true;
+    const write = () => (wrote = true);
     const logger = new Logger({
       streams: [
         {
           level: LoggerLevel[level],
-          stream: { write }
-        }
-      ]
+          stream: { write },
+        },
+      ],
     });
 
     for (const comparelevel of levels) {
       //@ts-ignore hacky stuff
-      (logger[comparelevel.toLowerCase()] as ((...data: any[]) => void))();
+      (logger[comparelevel.toLowerCase()] as (...data: any[]) => void)();
       expect(wrote).toBe(LoggerLevel[level] <= LoggerLevel[comparelevel]);
       wrote = false;
     }
@@ -65,9 +69,9 @@ test('strips formatting for fs.WriteStream', () => {
   const logger = new Logger({
     streams: [
       {
-        stream: new MockWriteStream((s: string) => writtenString = s)
-      }
-    ]
+        stream: new MockWriteStream((s: string) => (writtenString = s)),
+      },
+    ],
   });
 
   logger.info('test');
@@ -87,8 +91,8 @@ test('respects logger hierarchy', () => {
       {
         level: LoggerLevel.WARN,
         stream: {
-          write: (s: string) => void (firstWritten = s) || true
-        }
+          write: (s: string) => void (firstWritten = s) || true,
+        },
       },
     ],
   });
@@ -99,34 +103,33 @@ test('respects logger hierarchy', () => {
     streams: [
       {
         level: LoggerLevel.INFO,
-        stream: firstLogger
+        stream: firstLogger,
       },
       {
         level: LoggerLevel.INFO,
         stream: {
-          write: (s: string) => void (secondWritten = s) || true
-        }
+          write: (s: string) => void (secondWritten = s) || true,
+        },
       },
     ],
   });
-  
+
   const thirdLogger = new Logger({
     identifier: 'ThirdLogger',
     identifierPrefix: (_level: LoggerLevel, identifier?: string | symbol) => `[${identifier?.toString()}]`,
     streams: [
       {
         level: LoggerLevel.DEBUG,
-        stream: secondLogger
+        stream: secondLogger,
       },
       {
         level: LoggerLevel.DEBUG,
         stream: {
-          write: (s: string) => void (thirdWritten = s) || true
-        }
-      }
+          write: (s: string) => void (thirdWritten = s) || true,
+        },
+      },
     ],
   });
-  
 
   thirdLogger.info('foobar');
   expect(firstWritten).toBe('');
@@ -151,7 +154,7 @@ test('respects logger hierarchy', () => {
   firstWritten = '';
   secondWritten = '';
   thirdWritten = '';
-  
+
   firstLogger.fatal('foobar');
   expect(firstWritten).toBe('foobar\n');
   expect(secondWritten).toBe('');
@@ -159,5 +162,4 @@ test('respects logger hierarchy', () => {
   firstWritten = '';
   secondWritten = '';
   thirdWritten = '';
-
 });

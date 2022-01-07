@@ -47,8 +47,8 @@ export interface LoggerOptions {
  */
 export enum LoggerLevel {
   DEBUG = 0,
-  INFO  = 1,
-  WARN  = 2,
+  INFO = 1,
+  WARN = 2,
   ERROR = 3,
   FATAL = 4,
 }
@@ -77,7 +77,7 @@ export function coloredIdentifier(identifierColor = 0, bracketColor = 0): Prefix
       identifier = identifier.toString();
     }
     return `\x1b[${bracketColor}m[\x1b[0m\x1b[${identifierColor}m${identifier}\x1b[${bracketColor}m]\x1b[0m`;
-  }
+  };
 }
 
 /**
@@ -104,7 +104,13 @@ export function coloredLog(level: LoggerLevel): string {
       break;
   }
 
-  return `\x1b[90m[${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}]\x1b[39m \x1b[${loglevelcolor}m${`[${getLoggerLevelName(level)}]`.padEnd(7, ' ')}\x1b[39m `;
+  return `\x1b[90m[${date.getHours().toString().padStart(2, '0')}:${date
+    .getMinutes()
+    .toString()
+    .padStart(2, '0')}:${date
+    .getSeconds()
+    .toString()
+    .padStart(2, '0')}]\x1b[39m \x1b[${loglevelcolor}m${`[${getLoggerLevelName(level)}]`.padEnd(7, ' ')}\x1b[39m `;
 }
 
 export class Logger {
@@ -114,8 +120,8 @@ export class Logger {
       {
         stream: process.stdout,
         level: LoggerLevel.DEBUG,
-        prefix: (): string => `[${new Date().toLocaleTimeString()}] `
-      }
+        prefix: (): string => `[${new Date().toLocaleTimeString()}] `,
+      },
     ],
   };
 
@@ -144,7 +150,13 @@ export class Logger {
    * Adds a new output stream to the logger. If the exact same output stream is already added, it will be ignored.
    */
   public addOutput(output: LoggerOutput): this {
-    if (!this.outputs.some(o => o.stream === output.stream || ('write' in o.stream && 'write' in output.stream && o.stream.write === output.stream.write))) {
+    if (
+      !this.outputs.some(
+        o =>
+          o.stream === output.stream ||
+          ('write' in o.stream && 'write' in output.stream && o.stream.write === output.stream.write)
+      )
+    ) {
       this.outputs.push(output);
     }
     return this;
@@ -222,14 +234,14 @@ export class Logger {
           if (typeof output.prefix === 'function') {
             s += output.prefix(level);
           }
-  
+
           s += formatWithOptions.apply(this, [{ colors: true }, ...data]);
           // Remove ansi codes
           let sStripped = s.replace(
             // eslint-disable-next-line no-control-regex
             /[\u001B\u009B][[\]()#;?]*(?:(?:(?:[a-zA-Z\d]*(?:;[-a-zA-Z\d/#&.:=?%@~_]*)*)?\u0007)|(?:(?:\d{1,4}(?:;\d{0,4})*)?[\dA-PR-TZcf-ntqry=><~]))/g,
             ''
-            );
+          );
           if (typeof output.filter === 'function' && !output.filter(s, sStripped)) continue;
           s += '\n';
           sStripped += '\n';

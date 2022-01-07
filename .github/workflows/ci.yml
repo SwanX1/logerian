@@ -29,7 +29,35 @@ jobs:
         run: npm install
 
       - name: Build Code
-        run: npm run build
+        run: npm run build:only
+
+  format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Use Node.js v16
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Cache Dependencies
+        uses: actions/cache@v1
+        with:
+          path: |
+            ~/.npm
+            ./node_modules
+          key: ${{ runner.OS }}-cache-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.OS }}-cache-
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Check Formatting
+        run: npm run format:check
 
   lint:
     runs-on: ubuntu-latest
@@ -90,7 +118,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     if: success() && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-    needs: [ build, lint, test ]
+    needs: [ build, format, lint, test ]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -115,13 +143,7 @@ jobs:
         run: npm install
         
       - name: Build
-        run: npm run build
-
-      - name: Test
-        run: npm run test
-
-      - name: Lint
-        run: npm run lint
+        run: npm run build:only
 
       - name: Publish
         run: npm publish
@@ -142,7 +164,7 @@ jobs:
     permissions:
       contents: write
     if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [ build, lint, test ]
+    needs: [ build, format, lint, test ]
     steps:
       - name: Use NodeJS v16
         uses: actions/setup-node@v2
