@@ -99,7 +99,9 @@ export class Logger {
   }
 
   public addOutput(output: LoggerOutput): this {
-    this.outputs.push(output);
+    if (!this.outputs.some(o => o.stream === output.stream || ('write' in o.stream && 'write' in output.stream && o.stream.write === output.stream.write))) {
+      this.outputs.push(output);
+    }
     return this;
   }
 
