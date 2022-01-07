@@ -74,7 +74,7 @@ export class Logger {
     streams: [
       {
         stream: process.stdout,
-        level: LoggerLevel.INFO,
+        level: LoggerLevel.DEBUG,
         prefix: (): string => `[${new Date().toLocaleTimeString()}] `
       }
     ],
@@ -137,7 +137,7 @@ export class Logger {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   protected internalLog(level: LoggerLevel, ...data: any[]): void {
     for (const output of this.outputs) {
-      if ((output.level ?? LoggerLevel.INFO) <= level) {
+      if ((output.level ?? LoggerLevel.DEBUG) <= level) {
         if (output.stream instanceof Logger) {
           if (this.options.identifierPrefix) {
             output.stream.internalLog(level, this.options.identifierPrefix(level, this.options.identifier), ...data);
