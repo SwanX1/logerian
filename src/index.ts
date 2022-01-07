@@ -103,6 +103,11 @@ export class Logger {
     return this;
   }
 
+  public removeOutput(outputStream: LoggerOutput['stream']): this {
+    this.outputs = this.outputs.filter(output => output.stream !== outputStream);
+    return this;
+  }
+
   /* eslint-disable @typescript-eslint/no-explicit-any */
   public log(...data: any[]): void {
     this.internalLog(LoggerLevel.INFO, ...data);
