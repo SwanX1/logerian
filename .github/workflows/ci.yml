@@ -26,7 +26,7 @@ jobs:
             ${{ runner.OS }}-cache-
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --verbose
 
       - name: Build Code
         run: npm run build:only
@@ -54,7 +54,7 @@ jobs:
             ${{ runner.OS }}-cache-
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --verbose
 
       - name: Check Formatting
         run: npm run format:check
@@ -82,7 +82,7 @@ jobs:
             ${{ runner.OS }}-cache-
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --verbose
 
       - name: Lint Code
         run: npm run lint
@@ -110,7 +110,7 @@ jobs:
             ${{ runner.OS }}-cache-
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --verbose
 
       - name: Run Tests
         run: npm run test
@@ -140,18 +140,18 @@ jobs:
             ${{ runner.OS }}-cache-
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci --verbose
         
       - name: Build
         run: npm run build:only
 
       - name: Publish
-        run: npm publish
+        run: npm publish --verbose
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Pack
-        run: npm pack
+        run: npm pack --verbose
 
       - name: Create GitHub Release
         uses: ncipollo/release-action@v1
@@ -180,7 +180,7 @@ jobs:
           cd "$gitdir"
           git config advice.detachedHead false
           git checkout --force "$GITHUB_SHA"
-          npm install --verbose
+          npm ci --verbose
           npm run docs
           mv -vf "$gitdir/$DIRECTORY"/* $moddir
           cd "$moddir"
