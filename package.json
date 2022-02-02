@@ -29,7 +29,9 @@
   "scripts": {
     "build": "npm run build:only",
     "build:only": "tsc",
+    "build:noemit": "tsc --noEmit",
     "build:watch": "tsc -w",
+    "check": "npm run build:noemit && npm run prebuild",
     "docs": "typedoc --excludePrivate --name \"Logerian Documentation\" --logLevel Verbose src/index.ts",
     "format": "prettier --config .prettierrc.json --write test src *.json .*.json",
     "format:check": "prettier --config .prettierrc.json --check test src *.json .*.json",
