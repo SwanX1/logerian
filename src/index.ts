@@ -170,57 +170,54 @@ export class Logger {
     return this;
   }
 
-  /* eslint-disable @typescript-eslint/no-explicit-any */
   /**
    * Shorthand for {@link Logger.info()}
    */
-  public log(...data: any[]): void {
+  public log(...data: unknown[]): void {
     this.internalLog(LoggerLevel.INFO, ...data);
   }
 
   /**
    * Logs a message with log level {@link LoggerLevel.DEBUG}
    */
-  public debug(...data: any[]): void {
+  public debug(...data: unknown[]): void {
     this.internalLog(LoggerLevel.DEBUG, ...data);
   }
 
   /**
    * Logs a message with log level {@link LoggerLevel.INFO}
    */
-  public info(...data: any[]): void {
+  public info(...data: unknown[]): void {
     this.internalLog(LoggerLevel.INFO, ...data);
   }
 
   /**
    * Logs a message with log level {@link LoggerLevel.WARN}
    */
-  public warn(...data: any[]): void {
+  public warn(...data: unknown[]): void {
     this.internalLog(LoggerLevel.WARN, ...data);
   }
 
   /**
    * Logs a message with log level {@link LoggerLevel.ERROR}
    */
-  public error(...data: any[]): void {
+  public error(...data: unknown[]): void {
     this.internalLog(LoggerLevel.ERROR, ...data);
   }
 
   /**
    * Logs a message with log level {@link LoggerLevel.FATAL}
    */
-  public fatal(...data: any[]): void {
+  public fatal(...data: unknown[]): void {
     this.internalLog(LoggerLevel.FATAL, ...data);
   }
-  /* eslint-enable @typescript-eslint/no-explicit-any */
 
   /**
    * This is an internal method that logs a message with the given log level.
    * It will only log the message if the log level is greater than or equal to the level of the output.
    * @private
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  protected internalLog(level: LoggerLevel, ...data: any[]): void {
+  protected internalLog(level: LoggerLevel, ...data: unknown[]): void {
     for (const output of this.outputs) {
       if ((output.level ?? LoggerLevel.DEBUG) <= level) {
         if (output.stream instanceof Logger) {
