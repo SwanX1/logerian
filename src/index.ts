@@ -1,6 +1,7 @@
 import fs from 'fs';
 import { formatWithOptions } from 'util';
 
+export type IdentifierPredicate = (level: LoggerLevel, identifier?: string | symbol) => string;
 export type PrefixPredicate = (this: Logger, level: LoggerLevel, identifier?: string | symbol) => string;
 export type FilterPredicate = (this: Logger, data: string | Uint8Array, ansiFreeData: string | Uint8Array) => boolean;
 export type InterceptPredicate = (this: Logger, data: unknown[]) => unknown[] | null | undefined;
@@ -58,7 +59,7 @@ export interface LoggerOptions {
   /**
    * Used for heirarchical logging. This determines the prefix added to the log message before passing it on to the parent logger.
    */
-  identifierPrefix?: PrefixPredicate;
+  identifierPrefix?: IdentifierPredicate;
   /**
    * Determines the outputs that will be used to log the messages. Duplicate streams will be filtered out.
    */
@@ -93,7 +94,7 @@ export function getLoggerLevelName(level: LoggerLevel): 'DEBUG' | 'INFO' | 'WARN
  * @param identifierColor The color to use for the identifier. Accepts [ANSI escape codes](https://en.wikipedia.org/wiki/ANSI_escape_code#Colors).
  * @param bracketColor The color to use for the brackets. Accepts [ANSI escape codes](https://en.wikipedia.org/wiki/ANSI_escape_code#Colors).
  */
-export function coloredIdentifier(identifierColor = 0, bracketColor = 0): PrefixPredicate {
+export function coloredIdentifier(identifierColor = 0, bracketColor = 0): IdentifierPredicate {
   return (_level: LoggerLevel, identifier?: string | symbol): string => {
     if (identifier == null) return '';
     if (typeof identifier === 'symbol') {
@@ -245,11 +246,7 @@ export class Logger {
       if ((output.level ?? LoggerLevel.DEBUG) <= level) {
         if (output.stream instanceof Logger) {
           if (this.options.identifierPrefix) {
-            output.stream.internalLog(
-              level,
-              this.options.identifierPrefix.apply(this, [level, this.options.identifier]),
-              ...data
-            );
+            output.stream.internalLog(level, this.options.identifierPrefix(level, this.options.identifier), ...data);
           } else {
             output.stream.internalLog(level, ...data);
           }
