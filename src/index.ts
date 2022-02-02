@@ -3,6 +3,7 @@ import { formatWithOptions } from 'util';
 
 export type PrefixPredicate = (this: Logger, level: LoggerLevel, identifier?: string | symbol) => string;
 export type FilterPredicate = (this: Logger, data: string | Uint8Array, ansiFreeData: string | Uint8Array) => boolean;
+export type InterceptPredicate = (this: Logger, data: unknown[]) => unknown[] | null | undefined;
 
 export interface LoggerOutput {
   /**
@@ -25,6 +26,28 @@ export interface LoggerOutput {
    * If the stream is a {@link Logger} instance, this value will not be used.
    */
   filter?: FilterPredicate;
+  /**
+   * This predicate will be used to intercept log messages.
+   * If the function returns an array, the log data will be replaced with the output data. The returned array will not be intercepted.
+   * If the function returns null, the log data will not be logged at all.
+   * In any other case, the log message will be logged as normal. The logger will not intercept messages sent to a parent logger.
+   * @example
+   * ```js
+   * options = {
+   *  intercept: (data) => {
+   *    if (data[0] instanceof Error) {
+   *      return ["Intercepted Error: " + data[0].message];
+   *    }
+   *  }
+   * };
+   *
+   * logger.log([1, 2]);
+   * // => [1, 2]
+   * logger.log(new Error("Test Error"));
+   * // => Intercepted Error: Test Error
+   * ```
+   */
+  intercept?: InterceptPredicate;
 }
 
 export interface LoggerOptions {
@@ -231,6 +254,15 @@ export class Logger {
             output.stream.internalLog(level, ...data);
           }
         } else {
+          if (typeof output.intercept === 'function') {
+            const interceptData = output.intercept.apply(this, [data]);
+            if (Array.isArray(interceptData)) {
+              data = interceptData;
+            } else if (interceptData === null) {
+              continue;
+            }
+          }
+
           let s = '';
           if (typeof output.prefix === 'function') {
             s += output.prefix.apply(this, [level]);

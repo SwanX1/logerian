@@ -163,3 +163,54 @@ test('respects logger hierarchy', () => {
   secondWritten = '';
   thirdWritten = '';
 });
+
+test('intercepts correctly', () => {
+  let written = '';
+  let unwritten = '';
+  const logger = new Logger({
+    streams: [
+      {
+        stream: {
+          write: (s: string) => void (written = s) || true,
+        },
+        intercept: (data: unknown[]) => {
+          const obj = data[0];
+          if (obj instanceof Error) {
+            return ['Intercepted Error: ' + obj.message];
+          } else if (Array.isArray(obj)) {
+            return [obj.join(',')];
+          } else if (typeof obj === 'bigint') {
+            unwritten = obj.toString();
+            return null;
+          } else {
+            return;
+          }
+        },
+      },
+    ],
+  });
+
+  logger.info('foobar');
+  expect(written).toBe('foobar\n');
+  expect(unwritten).toBe('');
+  written = '';
+  unwritten = '';
+
+  logger.info(new Error('foobar'));
+  expect(written).toBe('Intercepted Error: foobar\n');
+  expect(unwritten).toBe('');
+  written = '';
+  unwritten = '';
+
+  logger.info(['foobar', 'barfoo']);
+  expect(written).toBe('foobar,barfoo\n');
+  expect(unwritten).toBe('');
+  written = '';
+  unwritten = '';
+
+  logger.info(123n);
+  expect(written).toBe('');
+  expect(unwritten).toBe('123');
+  written = '';
+  unwritten = '';
+});
