@@ -1,8 +1,8 @@
 import fs from 'fs';
 import { formatWithOptions } from 'util';
 
-export type PrefixPredicate = (level: LoggerLevel, identifier?: string | symbol) => string;
-export type FilterPredicate = (data: string | Uint8Array, ansiFreeData: string | Uint8Array) => boolean;
+export type PrefixPredicate = (this: Logger, level: LoggerLevel, identifier?: string | symbol) => string;
+export type FilterPredicate = (this: Logger, data: string | Uint8Array, ansiFreeData: string | Uint8Array) => boolean;
 
 export interface LoggerOutput {
   /**
@@ -222,14 +222,18 @@ export class Logger {
       if ((output.level ?? LoggerLevel.DEBUG) <= level) {
         if (output.stream instanceof Logger) {
           if (this.options.identifierPrefix) {
-            output.stream.internalLog(level, this.options.identifierPrefix(level, this.options.identifier), ...data);
+            output.stream.internalLog(
+              level,
+              this.options.identifierPrefix.apply(this, [level, this.options.identifier]),
+              ...data
+            );
           } else {
             output.stream.internalLog(level, ...data);
           }
         } else {
           let s = '';
           if (typeof output.prefix === 'function') {
-            s += output.prefix(level);
+            s += output.prefix.apply(this, [level]);
           }
 
           s += formatWithOptions.apply(this, [{ colors: true }, ...data]);
@@ -239,7 +243,7 @@ export class Logger {
             /[\u001B\u009B][[\]()#;?]*(?:(?:(?:[a-zA-Z\d]*(?:;[-a-zA-Z\d/#&.:=?%@~_]*)*)?\u0007)|(?:(?:\d{1,4}(?:;\d{0,4})*)?[\dA-PR-TZcf-ntqry=><~]))/g,
             ''
           );
-          if (typeof output.filter === 'function' && !output.filter(s, sStripped)) continue;
+          if (typeof output.filter === 'function' && !output.filter.apply(this, [s, sStripped])) continue;
           s += '\n';
           sStripped += '\n';
           if (output.stream instanceof fs.WriteStream) {
