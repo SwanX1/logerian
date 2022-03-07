@@ -174,13 +174,7 @@ export class Logger {
    * Adds a new output stream to the logger. If the exact same output stream is already added, it will be ignored.
    */
   public addOutput(output: LoggerOutput): this {
-    if (
-      !this.outputs.some(
-        o =>
-          o.stream === output.stream ||
-          ('write' in o.stream && 'write' in output.stream && o.stream.write === output.stream.write)
-      )
-    ) {
+    if (!this.outputs.includes(output)) {
       this.outputs.push(output);
     }
     return this;
