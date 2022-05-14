@@ -1,0 +1,1 @@
+This change allows Node v17 and v18 projects to use logerian as a dependency without package managers throwing tantrums
