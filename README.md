@@ -6,18 +6,19 @@ I made this logging utility mainly because I am too dumb to understand other log
 If you're willing to contribute, please read [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ### Usage
-To use this logger, you can simply just create a new logger instance and it'll work:
+To use this logger, you can simply just create a new logger instance and it'll work.
+It uses default options, which is the built-in `coloredLog` prefix, routing log levels correctly to stdout and stderr respectively:
 ```typescript
 import { Logger } from "logerian"; // ES import
 const { Logger } = require("logerian"); // CJS import
 
 const logger = new Logger();
 
-logger.log("Hello World!");
-// Output: [17:43:01] Hello World!
+logger.info("Hello World!");
+// Output: [17:43:01] [INFO] Hello World!
 ```
 
-By default, the logger creates a stream with a timestamp as shown in the example code above.
+By default, the logger adds a prefix with a timestamp and log level as shown in the example code above.
 If you wish to change that, you'll have to define a stream when you create the logger.
 ```typescript
 const logger = new Logger({
@@ -28,7 +29,7 @@ const logger = new Logger({
   ],
 });
 
-logger.log("foobar");
+logger.info("foobar");
 // Output: foobar
 ```
 
@@ -45,9 +46,9 @@ const logger = new Logger({
   ],
 });
 
-logger.log("Iron Man dies in Endgame");
+logger.info("Iron Man dies in Endgame");
 // Output: Iron Man dies in Endgame
-logger.log("Steve Rogers is old!!");
+logger.info("Steve Rogers is old!!");
 // Output: Steve Rogers is old!!
 ```
 ```conf
@@ -81,4 +82,4 @@ logger.error("Uh oh! There's an error!");
 logger.debug("By the way, there's an error because your code sucks!");
 ```
 
-For further information, read the [JSDocs](https://cernavskis.dev/docs/logerian).
+For advanced users, view the [JSDocs](https://cernavskis.dev/docs/logerian).

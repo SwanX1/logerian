@@ -87,38 +87,38 @@ jobs:
       - name: Lint Code
         run: npm run lint
 
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
+  # test:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout Repository
+  #       uses: actions/checkout@v2
 
-      - name: Use Node.js v16
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16.x'
-          registry-url: 'https://registry.npmjs.org'
+  #     - name: Use Node.js v16
+  #       uses: actions/setup-node@v2
+  #       with:
+  #         node-version: '16.x'
+  #         registry-url: 'https://registry.npmjs.org'
 
-      - name: Cache Dependencies
-        uses: actions/cache@v1
-        with:
-          path: |
-            ~/.npm
-            ./node_modules
-          key: ${{ runner.OS }}-cache-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.OS }}-cache-
+  #     - name: Cache Dependencies
+  #       uses: actions/cache@v1
+  #       with:
+  #         path: |
+  #           ~/.npm
+  #           ./node_modules
+  #         key: ${{ runner.OS }}-cache-${{ hashFiles('**/package-lock.json') }}
+  #         restore-keys: |
+  #           ${{ runner.OS }}-cache-
 
-      - name: Install dependencies
-        run: npm ci --verbose
+  #     - name: Install dependencies
+  #       run: npm ci --verbose
 
-      - name: Run Tests
-        run: npm run test
+  #     - name: Run Tests
+  #       run: npm run test
 
   publish:
     runs-on: ubuntu-latest
     if: success() && github.event_name == 'push' && contains(github.ref, 'refs/tags/')
-    needs: [ build, format, lint, test ]
+    needs: [ build, format, lint ]
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
@@ -143,7 +143,7 @@ jobs:
         run: npm ci --verbose
         
       - name: Build
-        run: npm run build:only
+        run: npm run build
 
       - name: Publish
         run: npm publish --verbose
@@ -164,7 +164,7 @@ jobs:
     permissions:
       contents: write
     if: success() && github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: [ build, format, lint, test ]
+    needs: [ build, format, lint ]
     steps:
       - name: Use NodeJS v16
         uses: actions/setup-node@v2
