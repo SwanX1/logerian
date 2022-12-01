@@ -285,7 +285,7 @@ export class Logger {
       stream.stream.log(level, data);
       return;
     }
-    if (!(stream.stream instanceof tty.WriteStream)) {
+    if (!(stream.stream instanceof tty.WriteStream && stream.allowPinnedLines)) {
       stream.stream.write(data);
       return;
     }
@@ -328,6 +328,7 @@ export class Logger {
    */
   public updatePinnedLines() {
     for (const stream of this.streams) {
+      if (!stream.allowPinnedLines) continue;
       if (stream.stream instanceof tty.WriteStream) {
         this.writePinnedLines(stream as DeterminedLoggerStream<tty.WriteStream>);
       }
