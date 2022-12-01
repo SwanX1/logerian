@@ -1,19 +1,26 @@
 import fs from 'fs';
+import tty from 'tty';
 import { formatWithOptions } from 'util';
 import { LoggerLevel } from './level';
+import { PinnedLine } from './pinnedline';
 import { coloredLog, stripANSIFormatting } from './util';
 
-interface DeterminedLoggerStream extends LoggerStream {
+interface DeterminedLoggerStream<
+  StreamType extends Pick<NodeJS.WritableStream, 'write'> | Logger = Pick<NodeJS.WritableStream, 'write'> | Logger
+> extends LoggerStream<StreamType> {
   level: (importance: number) => boolean;
   prefix: (level: keyof typeof LoggerLevel) => string;
+  allowPinnedLines: boolean;
 }
 
-export interface LoggerStream {
+export interface LoggerStream<
+  StreamType extends Pick<NodeJS.WritableStream, 'write'> | Logger = Pick<NodeJS.WritableStream, 'write'> | Logger
+> {
   /**
    * Stream that will be used to output the log messages.
    * If the stream is a {@link Logger} instance, the output will be logged to the stream. without filtering and without a prefix.
    */
-  stream: Pick<NodeJS.WritableStream, 'write'> | Logger;
+  stream: StreamType;
 
   /**
    * Determines the verbosity of the output.
@@ -43,6 +50,12 @@ export interface LoggerStream {
    * If the {@link stream} is a {@link Logger} instance, this function will not be called.
    */
   prefix?: (level: keyof typeof LoggerLevel) => string;
+
+  /**
+   * Whether or not to write pinned lines to this stream.
+   * @default true
+   */
+  allowPinnedLines?: boolean;
 
   /**
    * This function will be used to intercept and possibly modify log data.
@@ -87,7 +100,7 @@ export interface LoggerStream {
 }
 
 export interface LoggerOptions {
-  /** Defaults to stdout/stderr respectively with the default logger prefix from {@link coloredLog}. */
+  /** Defaults to stdout with the default logger prefix from {@link coloredLog}. */
   streams?: LoggerStream | LoggerStream[];
 
   /**
@@ -100,6 +113,8 @@ export interface LoggerOptions {
 export class Logger {
   private streams: DeterminedLoggerStream[];
   private identifier?: string;
+  // We can safely use Set here, because sets in javascript are ordered.
+  private pinnedLines: Set<PinnedLine> = new Set();
 
   public constructor(options: LoggerOptions = {}) {
     this.streams = (
@@ -110,11 +125,6 @@ export class Logger {
         : ([
             {
               stream: process.stdout,
-              level: importance => importance < 3,
-            },
-            {
-              stream: process.stderr,
-              level: importance => importance >= 3,
             },
           ] satisfies LoggerStream[])
     ).map(stream => {
@@ -130,6 +140,7 @@ export class Logger {
       return {
         level: levelFunc as (importance: number) => boolean,
         prefix,
+        allowPinnedLines: stream.allowPinnedLines ?? true,
         stream: stream.stream,
         interceptData: stream.interceptData,
         interceptString: stream.interceptString,
@@ -148,7 +159,6 @@ export class Logger {
     }
     return this;
   }
-
   /**
    * Removes a stream (note: the actual stream instead of the object) from the logger.
    */
@@ -208,45 +218,158 @@ export class Logger {
             throw new TypeError('interceptData returned an invalid type');
           }
         }
+      }
 
-        let message = formatWithOptions.apply(this, [{ colors: true }, ...data]);
+      this.logData(stream, level, data);
+    }
+  }
 
-        if (typeof stream.interceptString === 'function') {
-          const interceptModified = stream.interceptString.apply(this, [message, level]);
-          if (typeof interceptModified === 'string') {
-            message = interceptModified;
-          } else if (interceptModified === null) {
-            continue;
-          } else if (typeof interceptModified !== 'undefined') {
-            throw new TypeError('interceptString returned an invalid type');
-          }
-        }
+  private logData(stream: DeterminedLoggerStream, level: keyof typeof LoggerLevel, data: unknown[]): void {
+    const message = this.dataToMessage(stream, level, data);
 
-        if (stream.stream instanceof Logger) {
-          if (typeof this.identifier === 'string') {
-            message = message
-              .split('\n')
-              .map(line => this.identifier + ' ' + line)
-              .join('\n');
-          }
-          stream.stream.log(level, message);
-          continue;
-        }
+    if (message === null) {
+      return;
+    }
 
-        if (typeof stream.prefix === 'function') {
-          const prefix = stream.prefix.apply(this, [level]);
-          message = message
-            .split('\n')
-            .map(line => prefix + line)
-            .join('\n');
-        }
+    if (stream.stream instanceof Logger) {
+      stream.stream.log(level, message);
+    } else {
+      this.writeToStream(stream, level, message + '\n');
+    }
+  }
 
-        if (stream.stream instanceof fs.WriteStream) {
-          message = stripANSIFormatting(message);
-        }
-
-        stream.stream.write(message + '\n');
+  private dataToMessage(
+    stream: DeterminedLoggerStream,
+    level: keyof typeof LoggerLevel,
+    data: unknown[]
+  ): string | null {
+    let message = formatWithOptions.apply(this, [{ colors: true }, ...data]);
+    if (typeof stream.interceptString === 'function') {
+      const interceptModified = stream.interceptString.apply(this, [message, level]);
+      if (typeof interceptModified === 'string') {
+        message = interceptModified;
+      } else if (interceptModified === null) {
+        return null;
+      } else if (typeof interceptModified !== 'undefined') {
+        throw new TypeError('interceptString returned an invalid type');
       }
     }
+
+    if (stream.stream instanceof Logger) {
+      if (typeof this.identifier === 'string') {
+        message = message
+          .split('\n')
+          .map(line => this.identifier + ' ' + line)
+          .join('\n');
+      }
+      return message;
+    }
+
+    if (typeof stream.prefix === 'function') {
+      const prefix = stream.prefix.apply(this, [level]);
+      message = message
+        .split('\n')
+        .map(line => prefix + line)
+        .join('\n');
+    }
+
+    if (stream.stream instanceof fs.WriteStream) {
+      message = stripANSIFormatting(message);
+    }
+
+    return message;
+  }
+
+  private writeToStream(stream: DeterminedLoggerStream, level: string, data: string): void {
+    if (stream.stream instanceof Logger) {
+      stream.stream.log(level, data);
+      return;
+    }
+    if (!(stream.stream instanceof tty.WriteStream)) {
+      stream.stream.write(data);
+      return;
+    }
+    this.writePinnedLines(stream as DeterminedLoggerStream<tty.WriteStream>, data);
+  }
+
+  /**
+   * Creates a pinned line, which will always be at the bottom of the screen.
+   *
+   * Due to their nature, they cannot be logged to non-TTY streams.
+   *
+   * Pinned lines only work in top-level loggers, because loggers are not an implementation of a TTY stream.
+   */
+  public createPinnedLine(level: keyof typeof LoggerLevel, initialMessage?: string): PinnedLine {
+    const line = new PinnedLine(this, { level });
+    this.pinnedLines.add(line);
+    if (typeof initialMessage === 'string') {
+      line.setContent(initialMessage);
+    } else {
+      this.updatePinnedLines();
+    }
+    return line;
+  }
+
+  /**
+   * Releases a pinned line, causing it to be logged as-is in its current state.
+   * @returns If the line was not bound, and there was nothing to remove, the function returns false. Otherwise it returns true.
+   */
+  public releasePinnedLine(line: PinnedLine): boolean {
+    if (this.isPinnedLineBound(line)) {
+      this.pinnedLines.delete(line);
+      this.log(line.getLevel(), line.getContent());
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Forces an update for all pinned lines.
+   */
+  public updatePinnedLines() {
+    for (const stream of this.streams) {
+      if (stream.stream instanceof tty.WriteStream) {
+        this.writePinnedLines(stream as DeterminedLoggerStream<tty.WriteStream>);
+      }
+    }
+  }
+
+  public isPinnedLineBound(line: PinnedLine): boolean {
+    return this.pinnedLines.has(line);
+  }
+
+  private previousLineSize: Map<tty.WriteStream, number> = new Map();
+  private async writePinnedLines(
+    stream: DeterminedLoggerStream<tty.WriteStream>,
+    contentAbove?: string
+  ): Promise<void> {
+    const writeStream = stream.stream;
+    writeStream.moveCursor(0, -(this.previousLineSize.get(writeStream) ?? 0));
+    this.previousLineSize.set(writeStream, this.pinnedLines.size);
+    writeStream.cursorTo(0);
+    writeStream.clearLine(0);
+
+    if (contentAbove) {
+      writeStream.write(contentAbove);
+    }
+
+    this.pinnedLines.forEach(line => {
+      const level = line.getLevel();
+      if (!stream.level(LoggerLevel[level].importance)) {
+        return;
+      }
+
+      const message = this.dataToMessage(stream, line.getLevel(), [line.getContent()]);
+      if (message === null) {
+        return;
+      }
+
+      const content = message.split('\n', 1)[0].substring(0, writeStream.columns);
+
+      writeStream.cursorTo(0);
+      writeStream.clearLine(0);
+      writeStream.write(content);
+      writeStream.write('\n');
+    });
   }
 }

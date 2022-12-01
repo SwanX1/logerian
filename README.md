@@ -5,6 +5,9 @@ Logerian is a logging utility made by [me](https://github.com/SwanX1)!
 I made this logging utility mainly because I am too dumb to understand other loggers like [winston](https://www.npmjs.com/package/winston) and [signale](https://www.npmjs.com/package/signale).
 If you're willing to contribute, please read [CONTRIBUTING.md](./CONTRIBUTING.md).
 
+### Demo
+![GIF of library in action](./demo.gif)
+
 ### Usage
 To use this logger, you can simply just create a new logger instance and it'll work.
 It uses default options, which is the built-in `coloredLog` prefix, routing log levels correctly to stdout and stderr respectively:
@@ -82,4 +85,6 @@ logger.error("Uh oh! There's an error!");
 logger.debug("By the way, there's an error because your code sucks!");
 ```
 
-For advanced users, view the [JSDocs](https://cernavskis.dev/docs/logerian).
+If you want to use pinned lines (as they're called in code), just use `logger.createPinnedLine`. The rest should be pretty easy to understand from the documentation
+
+For advanced users, view the [JSDocs](https://swanx1.github.io/logerian).
