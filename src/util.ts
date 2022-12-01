@@ -1,9 +1,5 @@
 import { LoggerLevel, LoggerLevelData } from './level';
 
-function capitalizeString(value: string): string {
-  return value[0].toUpperCase() + value.slice(1).toLowerCase();
-}
-
 /**
  * Returns a colored prefix string.
  */
@@ -19,7 +15,7 @@ export function coloredLog(levelName: string): string {
     .toString()
     .padStart(2, '0')}:${date.getSeconds().toString().padStart(2, '0')}]\x1b[39m \x1b[${
     level.formatting?.ansiColor ?? 34
-  }m${`[${capitalizeString(levelName)}]`.padEnd(7, ' ')}\x1b[39m `;
+  }m${`[${levelName}]`.padEnd(7, ' ')}\x1b[39m `;
 }
 
 export function stripANSIFormatting(string: string): string {
