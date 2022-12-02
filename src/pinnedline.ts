@@ -21,8 +21,8 @@ export class PinnedLine {
   /**
    * Alias to {@link Logger.releasePinnedLine(line)}
    */
-  public release(): boolean {
-    return this.parent.releasePinnedLine(this);
+  public release(logLine = false): boolean {
+    return this.parent.releasePinnedLine(this, logLine);
   }
 
   /**

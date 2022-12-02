@@ -311,13 +311,15 @@ export class Logger {
   }
 
   /**
-   * Releases a pinned line, causing it to be logged as-is in its current state.
+   * Releases a pinned line, causing it to be deleted. If you'd like to log it when removing it, use the logLine parameter.
    * @returns If the line was not bound, and there was nothing to remove, the function returns false. Otherwise it returns true.
    */
-  public releasePinnedLine(line: PinnedLine): boolean {
+  public releasePinnedLine(line: PinnedLine, logLine = false): boolean {
     if (this.isPinnedLineBound(line)) {
       this.pinnedLines.delete(line);
-      this.log(line.getLevel(), line.getContent());
+      if (logLine) {
+        this.log(line.getLevel(), line.getContent());
+      }
       return true;
     }
     return false;
